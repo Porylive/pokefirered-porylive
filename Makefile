@@ -48,6 +48,10 @@ endif
 ROM := poke$(BUILD_NAME).gba
 OBJ_DIR := $(BUILD_DIR)/$(BUILD_NAME)
 
+ifeq ($(PORYLIVE),1)
+  OBJ_DIR := $(BUILD_DIR)/porylive-$(BUILD_NAME)
+endif
+
 ELF := $(ROM:.gba=.elf)
 MAP := $(ROM:.gba=.map)
 SYM := $(ROM:.gba=.sym)
@@ -117,6 +121,11 @@ FIX       := $(TOOLS_DIR)/gbafix/gbafix$(EXE)
 MAPJSON   := $(TOOLS_DIR)/mapjson/mapjson$(EXE)
 JSONPROC  := $(TOOLS_DIR)/jsonproc/jsonproc$(EXE)
 
+include make_live.mk
+ifeq ($(PORYLIVE),1)
+  CPPFLAGS += -DPORYLIVE=1
+endif
+
 PERL := perl
 SHA1 := $(shell { command -v sha1sum || command -v shasum; } 2>/dev/null) -c
 
@@ -135,6 +144,9 @@ ALL_BUILDS += $(ALL_BUILDS:%=%_modern)
 RULES_NO_SCAN += clean clean-assets tidy generated clean-generated
 .PHONY: all rom modern compare $(ALL_BUILDS) $(ALL_BUILDS:%=compare_%)
 .PHONY: $(RULES_NO_SCAN)
+
+# PoryLive no scan rules
+RULES_NO_SCAN += live-update live-prep clean-live tidylive
 
 infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
 
@@ -207,7 +219,7 @@ endif
 
 syms: $(SYM)
 
-clean: tidy clean-tools clean-generated clean-assets
+clean: tidy clean-tools clean-generated clean-assets clean-live
 
 clean-assets:
 	rm -f $(MID_SUBDIR)/*.s
@@ -220,6 +232,9 @@ clean-assets:
 tidy:
 	$(RM) $(ALL_BUILDS:%=poke%{.gba,.elf,.map})
 	$(RM) -r $(BUILD_DIR)
+
+clean-live:
+	rm -rf $(BUILD_DIR)/porylive*
 
 # "friendly" target names for convenience sake
 firered:                ; @$(MAKE) GAME_VERSION=FIRERED

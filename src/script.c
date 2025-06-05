@@ -6,6 +6,10 @@
 #include "constants/maps.h"
 #include "constants/map_scripts.h"
 
+#if PORYLIVE
+#include "porylive.h"
+#endif // PORYLIVE
+
 extern void ResetContextNpcTextColor(void); // field_specials
 extern u16 CalcCRC16WithTable(u8 *data, int length); // util
 
@@ -62,7 +66,11 @@ void InitScriptContext(struct ScriptContext *ctx, void *cmdTable, void *cmdTable
 
 u8 SetupBytecodeScript(struct ScriptContext *ctx, const u8 *ptr)
 {
+    #if PORYLIVE
+    ctx->scriptPtr = PoryLive_GetScriptPointer(ptr);
+    #else
     ctx->scriptPtr = ptr;
+    #endif // PORYLIVE
     ctx->mode = SCRIPT_MODE_BYTECODE;
     return 1;
 }
@@ -88,6 +96,10 @@ bool8 RunScriptCommand(struct ScriptContext *ctx)
     //if (ctx->mode == SCRIPT_MODE_STOPPED)
     //    return FALSE;
 
+    #if PORYLIVE
+    ctx->scriptPtr = PoryLive_GetScriptPointer(ctx->scriptPtr);
+    #endif // PORYLIVE
+
     switch (ctx->mode)
     {
     case SCRIPT_MODE_STOPPED:
@@ -101,6 +113,9 @@ bool8 RunScriptCommand(struct ScriptContext *ctx)
                 ctx->mode = SCRIPT_MODE_BYTECODE;
             return TRUE;
         }
+        #if PORYLIVE
+        ctx->scriptPtr = PoryLive_GetScriptPointer(ctx->scriptPtr);
+        #endif // PORYLIVE
         ctx->mode = SCRIPT_MODE_BYTECODE;
         // fallthrough
     case SCRIPT_MODE_BYTECODE:
@@ -120,6 +135,10 @@ bool8 RunScriptCommand(struct ScriptContext *ctx)
                 while (1)
                     asm("svc 2"); // HALT
             }
+
+            #if PORYLIVE
+            ctx->scriptPtr = PoryLive_GetScriptPointer(ctx->scriptPtr);
+            #endif // PORYLIVE
 
             cmdCode = *(ctx->scriptPtr);
             ctx->scriptPtr++;
@@ -164,13 +183,21 @@ static const u8 *ScriptPop(struct ScriptContext *ctx)
 
 void ScriptJump(struct ScriptContext *ctx, const u8 *ptr)
 {
+    #if PORYLIVE
+    ctx->scriptPtr = PoryLive_GetScriptPointer(ptr);
+    #else
     ctx->scriptPtr = ptr;
+    #endif // PORYLIVE
 }
 
 void ScriptCall(struct ScriptContext *ctx, const u8 *ptr)
 {
     ScriptPush(ctx, ctx->scriptPtr);
+    #if PORYLIVE
+    ctx->scriptPtr = PoryLive_GetScriptPointer(ptr);
+    #else
     ctx->scriptPtr = ptr;
+    #endif // PORYLIVE
 }
 
 void ScriptReturn(struct ScriptContext *ctx)

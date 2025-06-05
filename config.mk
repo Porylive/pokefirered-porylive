@@ -8,6 +8,8 @@ GAME_LANGUAGE ?= ENGLISH
 MODERN        ?= 0
 # Compares the ROM to a checksum of the original - only makes sense using when non-modern
 COMPARE       ?= 0
+# Enables PoryLive functionality for live development
+PORYLIVE     ?= 0
 
 KEEP_TEMPS    ?= 0
 
@@ -16,6 +18,9 @@ ifeq (modern,$(MAKECMDGOALS))
 endif
 ifeq (compare,$(MAKECMDGOALS))
   COMPARE := 1
+endif
+ifneq (,$(filter live live-update live-prep clean-live tidylive,$(MAKECMDGOALS)))
+  PORYLIVE := 1
 endif
 
 # For gbafix
